@@ -204,4 +204,27 @@ class BS_bicluster:
         #save raw_samples2 to filepath
         with open(filepath, 'w') as f:
             json.dump(raw_samples2, f)
+    
+    def get_majority_sample(self,row_postselect=True,max_photon_per_mode=1):
+        #Current implementation is intended for row_postselect to be True
+        if row_postselect == True:
+            postselected_samples = []
+            #get postselector ready
+            desired_modes = [i for i in range(int(self.U.shape[0]/2))]
+            undesired_modes = [i for i in range(int(self.U.shape[0]/2),self.U.shape[0])]
+            
+            condition_string = self.condition_builder(desired_modes,undesired_modes,max_photon_per_mode)
+            ps = PostSelect(condition_string) #ps will come in handy in the next section
+            
+            for item in self.raw_samples['results']:
+                if ps(pcvl.BasicState(str(item))) == True:
+                    postselected_samples.append(str(item))
+            
+        
+            return postselected_samples
+            
+           
+        
+        
+        
         
