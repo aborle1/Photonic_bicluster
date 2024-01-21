@@ -2,7 +2,9 @@
 import numpy as np
 import networkx as nx
 from scipy.linalg import sqrtm
+import scipy
 import json
+import statistics
 
 import perceval as pcvl
 from perceval.algorithm import Sampler
@@ -48,7 +50,7 @@ class BS_bicluster:
         
         Return U as a numpy matrix.
         """
-        V, __, Wh = np.linalg.svd(A)
+        V, __, Wh = scipy.linalg.svd(A)
         U = V @ Wh 
         return U
 
@@ -89,7 +91,7 @@ class BS_bicluster:
         self.circuit_error = np.linalg.norm(self.U - self.reconU) #absolute error in the Unitary (wrt to the circuit)
         #Preparing input_state
         inputstate = self.prep_input(col_idx)
-        print("Input state is: ",inputstate)
+        
         #Now do the boson sampling for the input state
         #set circuit and inputs
         self.QPU.set_circuit(self.boson_circuit)
@@ -170,8 +172,6 @@ class BS_bicluster:
             #get postselector ready
             desired_modes = [i for i in range(int(self.U.shape[0]/2))]
             undesired_modes = [i for i in range(int(self.U.shape[0]/2),self.U.shape[0])]
-            print("Desired modes:",desired_modes)
-            print("Undesired modes:",undesired_modes)
             
             condition_string = self.condition_builder(desired_modes,undesired_modes,max_photon_per_mode)
             ps = PostSelect(condition_string) #ps will come in handy in the next section
@@ -204,4 +204,46 @@ class BS_bicluster:
         #save raw_samples2 to filepath
         with open(filepath, 'w') as f:
             json.dump(raw_samples2, f)
+    
+    def get_majority_sample(self,row_postselect=True,max_photon_per_mode=1):
+        #Current implementation is intended for row_postselect to be True
+        if row_postselect == True:
+            postselected_samples = []
+            #get postselector ready
+            desired_modes = [i for i in range(int(self.U.shape[0]/2))]
+            undesired_modes = [i for i in range(int(self.U.shape[0]/2),self.U.shape[0])]
+            
+            condition_string = self.condition_builder(desired_modes,undesired_modes,max_photon_per_mode)
+            ps = PostSelect(condition_string) #ps will come in handy in the next section
+            
+            for item in self.raw_samples['results']:
+                if ps(pcvl.BasicState(str(item))) == True:
+                    postselected_samples.append(str(item))
+            
+            if postselected_samples == []:
+                return None
+            else:
+                return statistics.mode(postselected_samples) #get the string that occur the most  
+    
+    def get_majority_sample_alt(self,row_postselect=True,max_photon_per_mode=1):
+        #get_majority_sample seems buggy, probably due to perceval.utils.PostSelect
+        #This version does not use that
+                #Current implementation is intended for row_postselect to be True
+        if row_postselect == True:
+            postselected_samples = []
+            
+            
+            for item in self.raw_samples['results']:
+                state_list = list(item)
+                if all( i < (max_photon_per_mode + 1) for i in state_list[0:int(self.U.shape[0]/2)]) == True and all( i < 1 for i in state_list[int(self.U.shape[0]/2):self.U.shape[0]]) == True:
+                    postselected_samples.append(str(item))
+            
+            if postselected_samples == []:
+                return None
+            else:
+                return statistics.mode(postselected_samples) #get the string that occur the most
+    
+       
+        
+        
         
