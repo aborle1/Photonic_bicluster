@@ -1,0 +1,2 @@
+gbs_exp1_part1 is same as bs_exp2_part1.npz 
+such different names so as to NOT confuse people viewing the repo
