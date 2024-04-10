@@ -1,2 +1,2 @@
-gbs_exp1_part1 is same as bs_exp2_part1.npz 
-such different names so as to NOT confuse people viewing the repo
+gbs_exp2_part1.npz is the main file here.
+gbs-exp2_part2.npz 
